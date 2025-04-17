@@ -1,0 +1,28 @@
+{
+    "name": "T-ALBUM",
+    "short_name": "T-ALBUM",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#fff",
+    "description": "",
+    "icons": [
+        {
+            "src": "icon/icon.svg",
+            "sizes": "any",
+            "type": "image/svg",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icon/512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icon/192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

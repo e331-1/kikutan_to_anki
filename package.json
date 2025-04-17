@@ -1,0 +1,30 @@
+{
+  "name": "kikutan_to_anki",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack serve  --mode=development"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/hammerjs": "^2.0.46",
+    "css-loader": "^7.1.2",
+    "ts-loader": "~9",
+    "typescript": "~5",
+    "webpack": "^5.99.5",
+    "webpack-cli": "~6",
+    "webpack-dev-server": "^5.2.0",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "dependencies": {
+    "@types/css-modules": "^1.0.5",
+    "hammerjs": "^2.0.8",
+    "keen-slider": "^6.8.6",
+    "style-loader": "^4.0.0",
+    "tesseract.js": "^6.0.1"
+  }
+}
