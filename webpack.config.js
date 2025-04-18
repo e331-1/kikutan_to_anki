@@ -46,10 +46,15 @@ module.exports = {
                 test: /\.ts$/, loader: 'ts-loader'
             },
             {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                loader: 'babel'
+            },
+            {
                 assert: { type: "css" },
                 loader: "css-loader",
                 options: {
-                  exportType: "css-style-sheet",
+                    exportType: "css-style-sheet",
                 },
             },
             /*{

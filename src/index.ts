@@ -1,63 +1,13 @@
 import Database from "sql.js"
 import SevenZip, { SevenZipModule } from "7z-wasm";
-import {APKG_SCHEMA,Model,Deck,Package} from "genanki-js"
+import fs from 'fs'
+import { Package, Deck, Note, Model, Field, Card } from 'anki-apkg-generator'
+
 type KikutanType = "basic" | "advanced" | "super"
 type AnkiConfig = {
     kikutanType?: KikutanType
 }
-const sevenZip = await SevenZip();
-class BrowserPackage extends Package {
-    async downloadAsFile(fileName: string) {
-
-        let db = this.db;
-        db.run(APKG_SCHEMA);
-
-        this.write(db)
-
-
-        const data = db.export();
-        
-        sevenZip.FS.writeFile("collection.anki2", new Uint8Array(data));
-
-        const media_info: { [key: number]: string } = {}
-
-        this.media.forEach((m, i) => {
-            if (m.filename != null) {
-                sevenZip.FS.writeFile(i.toString(), m.filename)
-            } else {
-                sevenZip.FS.writeFile(i.toString(), m.data)
-            }
-
-            media_info[i] = m.name
-        })
-
-        sevenZip.FS.writeFile('media', JSON.stringify(media_info))
-
-        /*zip.generateAsync({ type: "blob", mimeType: "application/apkg" }).then(function (content) {
-            // see FileSaver.js
-            saveAs(content, filename);
-        });*/
-
-        // 圧縮を実行
-        const archiveName = `${fileName}.zip`;
-        sevenZip.callMain(["a", "-tzip", archiveName, "package.apkg"]);
-
-        // 圧縮されたデータを取得
-        const compressedData = sevenZip.FS.readFile(archiveName);
-
-        // Blobを作成し、ダウンロードリンクを生成
-        const blob = new Blob([compressedData], { type: "application/zip" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = archiveName;
-
-        // リンクをクリックしてダウンロードを開始
-        link.click();
-
-        // リソースを解放
-        URL.revokeObjectURL(link.href);
-    }
-}
+var kikutanWords={}
 class Anki {
     sevenZip?: SevenZipModule
     kikutanWords: {
@@ -108,42 +58,55 @@ class Anki {
         this.kikutanWords.advanced = JSON.parse(this.sevenZip.FS.readFile("res/raw/app_redux_json_android_advanced.json", { encoding: "utf8" }));
         this.kikutanWords.super = JSON.parse(this.sevenZip.FS.readFile("res/raw/app_redux_json_android_super.json", { encoding: "utf8" }));
         console.log(`Extracted content`);
+        (globalThis as any).kikutanWords=this.kikutanWords
 
     }
     
-    exportAnkiDeck() {
-        var model = new Model({
-            name: "Basic (and reversed card)",
-            id: "1543634829843",
-            flds: [
-                { name: "Front" },
-                { name: "Back" }
-            ],
-            req: [
-                [0, "all", [0]],
-                [1, "all", [1]]
-            ],
-            tmpls: [
-                {
-                    name: "Card 1",
-                    qfmt: "{{Front}}",
-                    afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
-                },
-                {
-                    name: "Card 2",
-                    qfmt: "{{Back}}",
-                    afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}",
-                }
-            ],
-        })
-
-        var deck = new Deck(1276438724672, "Test Deck")
-
-        deck.addNote(model.note(['this is front', 'this is back']))
-
-        var p = new BrowserPackage()
-        p.addDeck(deck)
-        p.downloadAsFile("test.apkg")
+    async exportAnkiDeck() {
+        const fields = [
+            { name: 'Answer' },
+            { name: 'Question' },
+            { name: 'MyMedia' },
+        ]
+    
+        const card = new Card()
+        card.setCss().setTemplates([
+            {
+                name: 'Card 1',
+                qfmt: '{{Question}}<br>{{MyMedia}}',
+                afmt: '{{FrontSide}}<hr id="answer">{{Answer}}',
+            },
+        ])
+    
+        const model = new Model(card)
+    
+        model
+            .setName('modelName')
+            .setSticky(true)
+            .setFields(fields.map((f, index) => new Field(f.name).setOrd(index)))
+    
+        const note = new Note(model)
+        note
+            .setFieldsValue([
+                'Capital of Argentina',
+                'Buenos Aires',
+                'media',
+            ])
+            .setTags(['q', 'z'])
+    
+        const deck = new Deck('deckName')
+        deck.addNote(note)
+        const pkg = new Package(deck)
+        const compressedData: any = await pkg.writeToFile()
+        
+        const blob = new Blob([compressedData], { type: "application/apkg" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "output.apkg"; // ダウンロードするファイル名を指定
+        link.click();
+        URL.revokeObjectURL(link.href);
+    
+        console.log('success')
     }
 
 }
