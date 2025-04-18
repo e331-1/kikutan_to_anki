@@ -1,61 +1,165 @@
-import Tesseract from 'tesseract.js';
+import Database from "sql.js"
+import SevenZip, { SevenZipModule } from "7z-wasm";
+import {APKG_SCHEMA,Model,Deck,Package} from "genanki-js"
+type KikutanType = "basic" | "advanced" | "super"
+type AnkiConfig = {
+    kikutanType?: KikutanType
+}
+const sevenZip = await SevenZip();
+class BrowserPackage extends Package {
+    async downloadAsFile(fileName: string) {
 
-const scheduler = Tesseract.createScheduler();
+        let db = this.db;
+        db.run(APKG_SCHEMA);
+
+        this.write(db)
 
 
-document.getElementById("submit")!.onclick = async() => {
-    for await (const file of (document.getElementById("screenshots") as HTMLInputElement)!.files!) {
-        const imageUrl = await trim(URL.createObjectURL(file))
+        const data = db.export();
         
-        const imageElement = document.createElement('img')
-        imageElement.src=imageUrl
-        document.getElementById('images')!.appendChild(imageElement);
+        sevenZip.FS.writeFile("collection.anki2", new Uint8Array(data));
 
-        var result=await ocr(imageUrl)
-        console.log(result)
+        const media_info: { [key: number]: string } = {}
+
+        this.media.forEach((m, i) => {
+            if (m.filename != null) {
+                sevenZip.FS.writeFile(i.toString(), m.filename)
+            } else {
+                sevenZip.FS.writeFile(i.toString(), m.data)
+            }
+
+            media_info[i] = m.name
+        })
+
+        sevenZip.FS.writeFile('media', JSON.stringify(media_info))
+
+        /*zip.generateAsync({ type: "blob", mimeType: "application/apkg" }).then(function (content) {
+            // see FileSaver.js
+            saveAs(content, filename);
+        });*/
+
+        // 圧縮を実行
+        const archiveName = `${fileName}.zip`;
+        sevenZip.callMain(["a", "-tzip", archiveName, "package.apkg"]);
+
+        // 圧縮されたデータを取得
+        const compressedData = sevenZip.FS.readFile(archiveName);
+
+        // Blobを作成し、ダウンロードリンクを生成
+        const blob = new Blob([compressedData], { type: "application/zip" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = archiveName;
+
+        // リンクをクリックしてダウンロードを開始
+        link.click();
+
+        // リソースを解放
+        URL.revokeObjectURL(link.href);
     }
 }
+class Anki {
+    sevenZip?: SevenZipModule
+    kikutanWords: {
+        advanced?: object,
+        basic?: object,
+        super?: object
+    } = {}
+    kikutanType: KikutanType
+    constructor(
+        {
+            kikutanType = "basic"
+        }: AnkiConfig = {}
+    ) {
+        this.kikutanType = kikutanType
+        SevenZip().then((sevenZip) => {
+            this.sevenZip = sevenZip;
+            console.log("7z-wasm is ready to use.");
+        })
+    }
+    private async handleFile(file: File) {
+        if (typeof this.sevenZip == "undefined") {
+            return
+        }
+        // FileオブジェクトをArrayBufferに変換
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
 
-// Creates worker and adds to scheduler
-async function ocr(url: string) {
-    var workerGen = async () => {
-        const worker = await Tesseract.createWorker(['eng', "jpn"]);
-        scheduler.addWorker(worker);
+        // 仮想ファイルシステムに書き込み
+        const fileName = file.name;
+        this.sevenZip.FS.writeFile(fileName, uint8Array);
+
+        console.log(`File ${fileName} has been loaded into the virtual file system.`);
     }
-    var workerN = 4;
-    console.log(url)
-    var resArr = Array(workerN);
-    for (let i = 0; i < workerN; i++) {
-        resArr[i] = workerGen();
+
+    async loadApkFile(file: File) {
+        if (typeof this.sevenZip == "undefined") {
+            return
+        }
+        await this.handleFile(file);
+
+        // 例: 仮想ファイルシステム内のファイルを解凍
+        const archiveName = file.name; // 最初のファイルをアーカイブとして扱う例
+        this.sevenZip.callMain(["x", archiveName]);
+
+        // 解凍されたファイルを確認
+
+        this.kikutanWords.basic = JSON.parse(this.sevenZip.FS.readFile("res/raw/app_redux_json_android_basic.json", { encoding: "utf8" }));
+        this.kikutanWords.advanced = JSON.parse(this.sevenZip.FS.readFile("res/raw/app_redux_json_android_advanced.json", { encoding: "utf8" }));
+        this.kikutanWords.super = JSON.parse(this.sevenZip.FS.readFile("res/raw/app_redux_json_android_super.json", { encoding: "utf8" }));
+        console.log(`Extracted content`);
+
     }
-    await Promise.all(resArr);
-    /** Add 10 recognition jobs */
-    var results = await Promise.all(Array(10).fill(0).map(() => (
-        scheduler.addJob('recognize', url).then((x) => console.log(x.data.text))
-    )))
-    await scheduler.terminate(); // It also terminates all workers.
-    return results
+    
+    exportAnkiDeck() {
+        var model = new Model({
+            name: "Basic (and reversed card)",
+            id: "1543634829843",
+            flds: [
+                { name: "Front" },
+                { name: "Back" }
+            ],
+            req: [
+                [0, "all", [0]],
+                [1, "all", [1]]
+            ],
+            tmpls: [
+                {
+                    name: "Card 1",
+                    qfmt: "{{Front}}",
+                    afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+                },
+                {
+                    name: "Card 2",
+                    qfmt: "{{Back}}",
+                    afmt: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Front}}",
+                }
+            ],
+        })
+
+        var deck = new Deck(1276438724672, "Test Deck")
+
+        deck.addNote(model.note(['this is front', 'this is back']))
+
+        var p = new BrowserPackage()
+        p.addDeck(deck)
+        p.downloadAsFile("test.apkg")
+    }
+
 }
 
-function trim(imageURL:string){
-    return new Promise<string>((resolve, reject) => {
-        var canvas = document.createElement('canvas');
-        //var canvas = document.getElementsByTagName("canvas")[0]
-        canvas.width=790
-        canvas.height=1000
-        var ctx = canvas.getContext('2d')!;
 
-        var img = new Image();
-        img.src = imageURL
-        // imgは読み込んだ後でないとwidth,heightが0
-        img.onload = function() {
-            //ctx.drawImage(img, 130, 770, 790, 1000);
-            ctx.drawImage(img,
-                130,770,790,1000,
-                0,0,790,1000);
-            canvas.toBlob((blob)=>{
-                resolve(URL.createObjectURL(blob!))
-            })
-        };
-    })
+const anki = new Anki()
+document.getElementById("submit")!.onclick = async (event) => {
+    const files = (<HTMLInputElement>document.getElementById("apkfile")!).files;
+    if (files) {
+
+        for (const file of files) {
+            anki.loadApkFile(file)
+        }
+    }
+};
+
+document.getElementById("export")!.onclick = async (event) => {
+    anki.exportAnkiDeck()
 }

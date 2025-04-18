@@ -21,7 +21,13 @@ module.exports = {
     // 例えば「import Foo from './foo'」という記述に対して"foo.ts"という名前のファイルをモジュールとして探す
     // デフォルトは['.js', '.json']
     resolve: {
-        extensions: ['.ts', '.js']
+        extensions: ['.ts', '.js'],
+        fallback: {
+            crypto: require.resolve("crypto-browserify"),
+            stream: require.resolve("stream-browserify"),
+            vm: require.resolve("vm-browserify"),
+            fs: false // fsモジュールを無効化
+        }
     },
     devServer: {
         // webpack-dev-serverの公開フォルダ
