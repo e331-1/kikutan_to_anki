@@ -1,3 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap');
+
+* {
+    font-family: "Noto Sans JP", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+  
+:root {
+    --status-background-color:#fff;
+    --status-loading-color:#000;
+    --status-error-color:red;
+    --status-success-color:green;
+}
+@keyframes display-loading {
+    0% {
+        background-color: var(--status-loading-color);
+        color: var(--status-background-color);
+    }
+    100% {
+        background-color: var(--status-background-color);
+        color: var(--status-loading-color);
+    }
+}
+
+@keyframes display-success {
+    0% {
+        background-color: var(--status-success-color);
+        color: var(--status-background-color);
+    }
+    100% {
+        background-color: var(--status-background-color);
+        color: var(--status-success-color);
+    }
+}
+
+@keyframes display-error {
+    0% {
+        background-color: var(--status-error-color);
+        color: var(--status-background-color);
+    }
+    100% {
+        background-color: var(--status-background-color);
+        color: var(--status-error-color);
+    }
+}
 #images>*{
     width: 100px;
+}
+.range{
+    width: 57.400px;
+}
+
+.status{
+    display: none;
+}
+
+.displayed{
+    display: block;
+}
+
+.loading{
+    color: black;
+}
+.displayed.loading{
+    animation: 1000ms forwards display-loading;
+}
+
+.error{
+    color: red;
+}
+.displayed.error{
+    animation: 1000ms forwards display-error;
+}
+
+.success{
+    color: green;
+}
+.displayed.success{
+    animation: 1000ms forwards display-success;
 }

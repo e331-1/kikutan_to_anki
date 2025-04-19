@@ -9,8 +9,38 @@
     </head>
     <body>
         <input type="file" accept=".apk" id="apkfile">
-        <input type="button" value="決定" id="submit">
+
+        <span class="status apk loading" id="apkLoading">Loading...</span>
+        <span class="status apk error" id="apkError">Error</span>
+        <span class="status apk success" id="apkSuccess">Success</span>
+
+        <hr>
+
+        <select id="type" disabled>
+            <option value="" id="optionDefault"></option>
+            <option value="basic">basic</option>
+            <option value="advanced">advanced</option>
+            <option value="super">super</option>
+        </select>
+        <div id="weekSelect">
+            week
+            <input type="number" min="1" class="range" id="weekStart" disabled>
+            ～
+            <input type="number" min="1" class="range" id="weekEnd" disabled>
+        </div>
+        
+        <hr>
+        
+        <input type="file" multiple id="audioFile" disabled>
+        <span class="status audio loading" id="audioLoading">Loading...</span>
+        <span class="status audio error" id="audioError">Error</span>
+        <span class="status audio success" id="audioSuccess">Success</span>
+        
+        <hr>
+        
         <input type="button" value="エクスポート" id="export">
+
+        
         <div id="images"></div>
         <canvas></canvas>
     </body>
