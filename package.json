@@ -23,12 +23,14 @@
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.49.1-build4",
     "@types/css-modules": "^1.0.5",
     "7z-wasm": "^1.1.0",
     "anki-apkg-export": "^4.0.3",
     "anki-apkg-generator": "^1.0.7",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
+    "file-loader": "^6.2.0",
     "fs": "^0.0.1-security",
     "genanki-js": "^2.0.0",
     "hammerjs": "^2.0.8",

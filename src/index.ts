@@ -93,9 +93,23 @@ class Anki {
                 'media',
             ])
             .setTags(['q', 'z'])
+            .setName("note1")
+
+        const note2 = new Note(model)
+            note2
+                .setFieldsValue([
+                    'C2apital of Argentina',
+                    'Bu2enos Aires',
+                    'media',
+                ])
+                .setTags(['q', 'z'])
+                .setId(1745048853425)
+                .setName("note2")
     
         const deck = new Deck('deckName')
         deck.addNote(note)
+        deck.addNote(note2)
+        console.log(deck.notes)
         const pkg = new Package(deck)
         const compressedData: any = await pkg.writeToFile()
         
