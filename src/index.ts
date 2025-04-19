@@ -58,7 +58,12 @@ class Anki {
             const sevenZip =await SevenZip()
             console.log("7z-wasm is ready to use.");
 
-            await this.handleFile(file,sevenZip);
+            try {
+                await this.handleFile(file,sevenZip);
+            } catch (error) {
+                reject(`Error handling file: ${error}`);
+                return
+            }
 
             // 例: 仮想ファイルシステム内のファイルを解凍
             const archiveName = file.name; // 最初のファイルをアーカイブとして扱う例
@@ -334,13 +339,24 @@ window.onload = async () =>{
                 document.getElementById("apkLoading")!.classList.remove("displayed")
                 console.log("APK file loaded successfully.");
                 (<HTMLSelectElement>document.getElementById("type")).disabled = false;
-                document.getElementById("apkSuccess")!.classList.add("displayed")
+                document.getElementById("apkSuccess")!.classList.add("displayed");
+                if((<HTMLSelectElement>document.getElementById("type")!).value!==""){
+                    (<HTMLInputElement>document.getElementById("weekStart")).disabled = false;
+                    (<HTMLInputElement>document.getElementById("weekEnd")).disabled = false;
+                    (<HTMLInputElement>document.getElementById("audioFile")).disabled = false;
+                    (<HTMLInputElement>document.getElementById("export")).disabled=false;
+
+                }
             }
             ).catch((error) => {
                 document.getElementById("apkLoading")!.classList.remove("displayed")
                 console.error("Error loading APK file:", error);
                 (<HTMLSelectElement>document.getElementById("type")!).disabled = true;
-                document.getElementById("apkSuccess")!.classList.add("displayed")
+                document.getElementById("apkError")!.classList.add("displayed");
+                (<HTMLInputElement>document.getElementById("export")).disabled=true;
+                (<HTMLInputElement>document.getElementById("weekStart")).disabled = true;
+                (<HTMLInputElement>document.getElementById("weekEnd")).disabled = true;
+                (<HTMLInputElement>document.getElementById("audioFile")).disabled = true;
             })
         }
     };
@@ -363,6 +379,7 @@ window.onload = async () =>{
         (<HTMLInputElement>document.getElementById("weekEnd")).max = week.toString();
 
         (<HTMLInputElement>document.getElementById("audioFile")).disabled = false;
+        (<HTMLInputElement>document.getElementById("export")).disabled=false;
         anki.weekRange = [1, week]
     }
     document.getElementById("audioFile")!.onchange = async (event) => {
