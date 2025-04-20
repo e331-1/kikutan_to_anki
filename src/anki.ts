@@ -1,6 +1,4 @@
-import Database from "sql.js"
 import SevenZip, { FileSystem, SevenZipModule } from "7z-wasm";
-import fs from 'fs'
 import { Package, Deck, Note, Model, Field, Card, Media } from 'anki-apkg-generator'
 
 export type KikutanType = "basic" | "advanced" | "super"
