@@ -171,6 +171,7 @@ export class Anki {
             }
             .word{
                 margin: 8px 0;
+                font-weight: 700;
             }
 
             `).setTemplates([
