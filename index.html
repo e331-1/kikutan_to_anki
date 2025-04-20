@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link rel="stylesheet" href="./index.css" type="text/css">
+        <!--<link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">-->
+        <link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials" />
+    </head>
+    <body>
+        <input type="file" accept=".apk" id="apkfile">
+
+        <span class="status apk loading" id="apkLoading">Loading...</span>
+        <span class="status apk error" id="apkError">Error</span>
+        <span class="status apk success" id="apkSuccess">Success</span><br>
+        <small>キクタンのapkファイルを選択してください</small>
+        <hr>
+
+        <select id="type" disabled>
+            <option value="" id="optionDefault"></option>
+            <option value="basic">basic</option>
+            <option value="advanced">advanced</option>
+            <option value="super">super</option>
+        </select>
+        <div id="weekSelect">
+            week
+            <input type="number" min="1" class="range" id="weekStart" disabled>
+            ～
+            <input type="number" min="1" class="range" id="weekEnd" disabled>
+        </div>
+        
+        <hr>
+        
+        <input type="file" multiple id="audioFile" disabled>
+        <span class="status audio loading" id="audioLoading">Loading...</span>
+        <span class="status audio error" id="audioError">Error</span>
+        <span class="status audio success" id="audioSuccess">Success</span><br>
+        <small>basic.zip / advanced.zip / super.zip と persist-wordsStoreを選択すると、音声を入れれます</small>
+        <hr>
+        
+        <input type="button" value="apkgダウンロード" id="download" disabled>
+        <input type="button" value="apkg共有" id="share" disabled>
+        <span class="status export loading" id="exportLoading">Loading...</span>
+        <span class="status export error" id="exportError">Error</span>
+        <span class="status export success" id="exportSuccess">Success</span><br>
+        
+        <div id="images"></div>
+        <canvas></canvas>
+    </body>
+    <script src="./bundle.js"></script>
+</html>
