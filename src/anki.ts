@@ -304,7 +304,7 @@ export class Anki {
             const compressedData: any = await pkg.writeToFile()
 
             const blob = new Blob([compressedData], { type: "application/apkg" });
-            const file = new File([blob], 'キクタン.txt', { type: blob.type })
+            const file = new File([blob], `キクタン${this.kikutanType}.apkg`, { type: blob.type })
 
             resolve(file)
         })

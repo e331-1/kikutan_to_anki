@@ -59,7 +59,7 @@ window.onload = async () => {
             
             const link = document.createElement("a");
             link.href = URL.createObjectURL(file);
-            link.download = "キクタン.apkg"; // ダウンロードするファイル名を指定
+            link.download = `キクタン${(<HTMLSelectElement>document.getElementById("type")!).value}.apkg`; // ダウンロードするファイル名を指定
             link.click();
             URL.revokeObjectURL(link.href);
 
