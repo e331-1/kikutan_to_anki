@@ -3,7 +3,7 @@
 * {
     font-family: "Noto Sans JP", sans-serif;
     font-optical-sizing: auto;
-    font-weight: 400;
+    font-weight: 500;
     font-style: normal;
 }
   
@@ -79,4 +79,12 @@
 }
 .displayed.success{
     animation: 1000ms forwards display-success;
+}
+
+hr{
+    margin: 20px 0;
+}
+small{
+    color: rgba(0, 0, 0, 0.3);
+    font-weight:400;
 }

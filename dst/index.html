@@ -12,8 +12,8 @@
 
         <span class="status apk loading" id="apkLoading">Loading...</span>
         <span class="status apk error" id="apkError">Error</span>
-        <span class="status apk success" id="apkSuccess">Success</span>
-
+        <span class="status apk success" id="apkSuccess">Success</span><br>
+        <small hidden>キクタンのapkファイルを選択してください</small>
         <hr>
 
         <select id="type" disabled>
@@ -34,12 +34,15 @@
         <input type="file" multiple id="audioFile" disabled>
         <span class="status audio loading" id="audioLoading">Loading...</span>
         <span class="status audio error" id="audioError">Error</span>
-        <span class="status audio success" id="audioSuccess">Success</span>
-        
+        <span class="status audio success" id="audioSuccess">Success</span><br>
+        <small hidden>basic.zip / advanced.zip / super.zip と persist-wordsStoreを選択すると、音声を入れれます</small>
         <hr>
         
-        <input type="button" value="エクスポート" id="export" disabled>
-
+        <input type="button" value="apkgダウンロード" id="download" disabled>
+        <input type="button" value="apkg共有" id="share" disabled>
+        <span class="status export loading" id="exportLoading">Loading...</span>
+        <span class="status export error" id="exportError">Error</span>
+        <span class="status export success" id="exportSuccess">Success</span><br>
         
         <div id="images"></div>
         <canvas></canvas>
