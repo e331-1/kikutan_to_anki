@@ -1,6 +1,6 @@
 import SevenZip, { FileSystem, SevenZipModule } from "7z-wasm";
 import { Package, Deck, Note, Model, Field, Card, Media } from 'anki-apkg-generator'
-
+import { SevenZipWorkerArguments } from "./worker"
 export type KikutanType = "basic" | "advanced" | "super"
 export type AnkiConfig = {
     kikutanType?: KikutanType
@@ -15,10 +15,8 @@ export class Anki {
     private kikutanType?: KikutanType
     private idCount: number = 0
     private idDate: Date = new Date()
-    persistWordsStore?: object = {}
-    audioFileFS?: FileSystem
-    apkFileFS?: FileSystem
-    private reg = /(?<=\/)[^/]*$/
+    audioFiles:Array<File>=[]
+    private reg = /(^|(?<=\/))[^/]*$/
     weekRange: Array<number> = []
     constructor(
         {
@@ -28,61 +26,56 @@ export class Anki {
         this.kikutanType = kikutanType
 
     }
-    private async handleFile(file: File, sevenZip: SevenZipModule) {
-        if (typeof sevenZip == "undefined") {
-            return
-        }
-        // FileオブジェクトをArrayBufferに変換
-        const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
+    private async sevenZipWorker(args: SevenZipWorkerArguments): Promise<Array<File>> {
+        return new Promise<any>(async (resolve, reject) => {
+            const worker = new Worker(new URL('./worker.ts', import.meta.url));
+            worker.postMessage(args);
+            worker.onmessage = (result) => {
+                if (result.data instanceof Error) {
+                    reject(result.data.message)
+                    return
+                }
+                if (!(result.data instanceof Array)) {
+                    reject("unknown return type")
+                    return
+                }
+                resolve(result.data)
 
-        // 仮想ファイルシステムに書き込み
-        const fileName = file.name;
-        sevenZip.FS.writeFile(fileName, uint8Array);
-        sevenZip.FS.chmod(fileName, 777)
-        console.log(`File ${fileName} has been loaded into the virtual file system.`);
-    }
-
-    mkdirRecursive(fs: FileSystem, path: string) {
-        var b = ""
-        path.split("/").forEach(e => {
-            b += "/" + e
-            fs.mkdir(b)
+            };
         })
     }
     async loadApkFile(file: File) {
         return new Promise<void>(async (resolve, reject) => {
-            const sevenZip = await SevenZip()
-            console.log("7z-wasm is ready to use.");
+
+            const unzippedFiles = await this.sevenZipWorker({
+                file: file,
+                args: ["x", file.name],
+                filesToUnzip: [
+                    "res/raw/app_redux_json_android_basic.json",
+                    "res/raw/app_redux_json_android_advanced.json",
+                    "res/raw/app_redux_json_android_super.json"
+                ]
+            })
 
             try {
-                await this.handleFile(file, sevenZip);
-            } catch (error) {
-                reject(`Error handling file: ${error}`);
-                return
-            }
-
-            // 例: 仮想ファイルシステム内のファイルを解凍
-            const archiveName = file.name; // 最初のファイルをアーカイブとして扱う例
-            sevenZip.callMain(["x", archiveName]);
-            this.apkFileFS = sevenZip.FS
-
-            //anki.audioFileFS.nameTable.forEach((e)=>console.log(e.name))
-            // 例: 仮想ファイルシステム内のファイルを読み込む
-            try{
-                this.kikutanWords.basic = JSON.parse(sevenZip.FS.readFile("res/raw/app_redux_json_android_basic.json", { encoding: "utf8" })).words;
-                this.kikutanWords.advanced = JSON.parse(sevenZip.FS.readFile("res/raw/app_redux_json_android_advanced.json", { encoding: "utf8" })).words;
-                this.kikutanWords.super = JSON.parse(sevenZip.FS.readFile("res/raw/app_redux_json_android_super.json", { encoding: "utf8" })).words;
+                this.kikutanWords.basic = JSON.parse(await unzippedFiles[0].text()).words;
+                this.kikutanWords.advanced = JSON.parse(await unzippedFiles[1].text()).words;
+                this.kikutanWords.super = JSON.parse(await unzippedFiles[2].text()).words;
                 console.log(`Extracted content`);
                 resolve()
-            }catch(error){
+            } catch (error) {
                 reject(`Error extracting content: ${error}`);
 
             }
-            
+
+
+            //anki.audioFileFS.nameTable.forEach((e)=>console.log(e.name))
+            // 例: 仮想ファイルシステム内のファイルを読み込む
+
 
         })
     }
+    
     async loadAudioZipFile(files: FileList) {
         return new Promise<void>(async (resolve, reject) => {
             const persistWordsStoreFile = Array.from(files).find((file) => file.name == "persist-wordsStore")
@@ -93,19 +86,38 @@ export class Anki {
             }
 
             const persistWordsStore = JSON.parse(JSON.parse(await persistWordsStoreFile.text()).downloadedFiles)
-            const sevenZip = await SevenZip()
-            console.log("7z-wasm is ready to use.");
 
-            await this.handleFile(audioZipFile, sevenZip);
+            const unzippedFiles = await this.sevenZipWorker({
+                file: audioZipFile,
+                args: ["e", audioZipFile.name],
+                filesToUnzip: "all"
+            })
 
+            
+            const MissingFiles:Array<string>=[];
 
-            //sevenZip.FS.mkdir("/home")
+            Object.values(persistWordsStore).forEach((object: any, index) => {
+                var day = Number((<string>object.local).match(/(?<=day-)[0-9]+(?=-)/)?.[0]);
+                if (!(this.weekRange[0] * 7 - 6 <= day && day <= this.weekRange[1] * 7)) {
+                    return
+                }
 
-            sevenZip.callMain(["e", audioZipFile.name]);
-
-            this.persistWordsStore = persistWordsStore
-            //console.log(sevenZip.FS.readFile("word-advanced-word-day-1-number-1-audioUrl.mp3", { encoding: "binary" }).buffer)
-            this.audioFileFS = sevenZip.FS
+                
+                var localFileName = `${((<string>object.local).match(this.reg)??[])[0]}`
+                var remoteFileName = `_${((<string>object.remote).match(this.reg)??[])[0]}`
+    
+                var file=unzippedFiles.find((file) => (file.name.match(this.reg)??[])[0] == localFileName)
+                if (typeof file == "undefined") {
+                    MissingFiles.push(localFileName)
+                    return
+                }
+                this.audioFiles.push(new File([file], remoteFileName, { type: file.type }))
+                console.log(`${localFileName} > ${remoteFileName}`)
+            })
+            if (MissingFiles.length > 0) {
+                reject(`${this.kikutanType}.zipの中の以下のファイルが不足しています "\n ${MissingFiles.join(",\n")}"`)
+                return
+            }
 
 
 
@@ -230,13 +242,13 @@ export class Anki {
                         word.word,
                         word.meaning,
                         word.pronounce,
-                        "_" + (<string>word.audioUrl).match(this.reg),
-                        "_" + (<string>word.translatedAudioUrl).match(this.reg),
+                        "_" + (((<string>word.audioUrl).match(this.reg))??[])[0],
+                        "_" + (((<string>word.translatedAudioUrl).match(this.reg))??[])[0],
 
                         word.phrase.termsArray[0],
                         word.phrase.termsArray[1],
                         word.phrase.termsArray[2],
-                        "_" + (<string>word.phrase.audioUrl).match(this.reg),
+                        "_" + (((<string>word.phrase.audioUrl).match(this.reg))??[])[0],
 
                         word.translatedPhrase.termsArray[0],
                         word.translatedPhrase.termsArray[1],
@@ -245,7 +257,8 @@ export class Anki {
                         word.phrase2?.termsArray[0] ?? "",
                         word.phrase2?.termsArray[1] ?? "",
                         word.phrase2?.termsArray[2] ?? "",
-                        word.phrase2 ? (<string>word.phrase2?.audioUrl)?.match(this.reg) : "",
+                        word.phrase2?("_" + (((<string>word.phrase2.audioUrl).match(this.reg))??[])[0]):"",
+                        
 
                         word.translatedPhrase2?.termsArray[0] ?? "",
                         word.translatedPhrase2?.termsArray[1] ?? "",
@@ -254,7 +267,7 @@ export class Anki {
                         word.sentence.termsArray[0],
                         word.sentence.termsArray[1],
                         word.sentence.termsArray[2],
-                        "_" + (<string>word.sentence.audioUrl).match(this.reg),
+                        "_" + (((<string>word.sentence.audioUrl).match(this.reg))??[])[0],
 
                         word.translatedSentence.termsArray[0],
                         word.translatedSentence.termsArray[1],
@@ -267,38 +280,10 @@ export class Anki {
             })
 
             const mediaList: Array<Media> = []
-            if ((typeof this.audioFileFS !== "undefined") && (typeof this.persistWordsStore !== "undefined")) {
-                const audioFileFS = this.audioFileFS
-                Object.values(this.persistWordsStore).forEach((object: any, index) => {
-
-
-
-
-                    var day = Number((<string>object.local).match(/(?<=day-)[0-9]+(?=-)/)?.[0]);
-                    if (!(this.weekRange[0] * 7 - 6 <= day && day <= this.weekRange[1] * 7)) {
-                        return
-                    }
-                    console.log(`
-                    ${this.weekRange[0]}-${this.weekRange[1]}
-
-
-                    ${this.weekRange[0] * 7 - 6}<=${day}
-                    ${this.weekRange[0] * 7 - 6 <= day}
-
-                    ${day}<=${this.weekRange[1] * 7}
-                    ${day <= this.weekRange[1] * 7}
-                    
-                `)
-                    var localPath = `/${(<string>object.local).match((this.reg))}`
-                    var remotePath = `_${(<string>object.remote).match((this.reg))}`
-
-
-                    console.log(`${localPath} > ${remotePath}`)
-                    audioFileFS.chmod(localPath, 777)
-                    mediaList.push(new Media(audioFileFS.readFile(localPath, { encoding: "binary" }).buffer, remotePath))
-                })
-
-            }
+            this.audioFiles.forEach(async(file) => {
+                console.log(file.name)
+                mediaList.push(new Media(await file.arrayBuffer(),file.name))
+            })
 
             const pkg = new Package(deckList, mediaList)
             console.log(pkg)

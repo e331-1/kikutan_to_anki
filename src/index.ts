@@ -1,4 +1,4 @@
-import { Anki,KikutanType } from "./anki";
+import { Anki, KikutanType } from "./anki";
 declare global {
     interface Window {
         anki: Anki
@@ -13,13 +13,13 @@ window.onload = async () => {
         })
         const files = (<HTMLInputElement>document.getElementById("apkfile")!).files;
         if (files) {
-            if(!files[0].name.endsWith(".apk")){
+            if (!files[0].name.endsWith(".apk")) {
                 alert("APKファイルではありません")
                 return
             }
             document.getElementById("apkLoading")!.classList.add("displayed")
             anki.loadApkFile(files[0]).then(() => {
-                
+
                 document.getElementById("apkLoading")!.classList.remove("displayed")
                 console.log("APK file loaded successfully.");
                 (<HTMLSelectElement>document.getElementById("type")).disabled = false;
@@ -38,7 +38,7 @@ window.onload = async () => {
                 console.error("Error loading APK file:", error);
                 (<HTMLSelectElement>document.getElementById("type")!).disabled = true;
                 document.getElementById("apkError")!.classList.add("displayed");
-                document.getElementById("apkError")!.innerText=`エラー : ${error}`;
+                document.getElementById("apkError")!.innerText = `エラー : ${error}`;
                 (<HTMLInputElement>document.getElementById("weekStart")).disabled = true;
                 (<HTMLInputElement>document.getElementById("weekEnd")).disabled = true;
                 (<HTMLInputElement>document.getElementById("audioFile")).disabled = true;
@@ -53,10 +53,10 @@ window.onload = async () => {
             element.classList.remove("displayed")
         })
         document.getElementById("exportLoading")!.classList.add("displayed");
-        anki.exportAnkiDeck().then((file)=>{
+        anki.exportAnkiDeck().then((file) => {
             document.getElementById("exportLoading")!.classList.remove("displayed");
             document.getElementById("exportSuccess")!.classList.add("displayed");
-            
+
             const link = document.createElement("a");
             link.href = URL.createObjectURL(file);
             link.download = `キクタン${(<HTMLSelectElement>document.getElementById("type")!).value}.apkg`; // ダウンロードするファイル名を指定
@@ -67,7 +67,7 @@ window.onload = async () => {
         }).catch((error) => {
             document.getElementById("exportLoading")!.classList.remove("displayed");
             document.getElementById("exportError")!.classList.add("displayed");
-            document.getElementById("exportError")!.innerText=`エラー : ${error}`
+            document.getElementById("exportError")!.innerText = `エラー : ${error}`
         })
     }
 
@@ -76,18 +76,18 @@ window.onload = async () => {
             element.classList.remove("displayed")
         })
         document.getElementById("exportLoading")!.classList.add("displayed");
-        anki.exportAnkiDeck().then(async(file)=>{
+        anki.exportAnkiDeck().then(async (file) => {
             await navigator.share({
-                files:[file]
+                files: [file]
             })
             console.log('success')
             document.getElementById("exportLoading")!.classList.remove("displayed");
             document.getElementById("exportSuccess")!.classList.add("displayed");
-            
+
         }).catch((error) => {
             document.getElementById("exportLoading")!.classList.remove("displayed");
             document.getElementById("exportError")!.classList.add("displayed");
-            document.getElementById("exportError")!.innerText=`エラー : ${error}`
+            document.getElementById("exportError")!.innerText = `エラー : ${error}`
         })
     }
 
@@ -95,6 +95,7 @@ window.onload = async () => {
         (<HTMLOptionElement>document.getElementById("optionDefault")!).disabled = true
         const type = (<HTMLSelectElement>document.getElementById("type")!).value as KikutanType
         const week = anki.setKikutanType(type);
+        loadAudioFile(true);
 
         (<HTMLInputElement>document.getElementById("weekStart")).disabled = false;
         (<HTMLInputElement>document.getElementById("weekStart")).value = "1";
@@ -110,30 +111,12 @@ window.onload = async () => {
         anki.weekRange = [1, week]
     }
     document.getElementById("audioFile")!.onchange = async (event) => {
+        loadAudioFile()
         //document.getElementById("loading")!.style.display = "block"
-        Array.from(<NodeListOf<HTMLElement>>document.querySelectorAll(".status.audio")).forEach((element) => {
-            element.classList.remove("displayed")
-        })
-        document.getElementById("audioLoading")!.classList.add("displayed")
-        const files = (<HTMLInputElement>document.getElementById("audioFile")!).files;
-        if (files) {
-            anki.loadAudioZipFile(files).then(() => {
-                document.getElementById("audioLoading")!.classList.remove("displayed")
-                //document.getElementById("apkLoading")!.style.display = "none"
-                console.log("audio file loaded successfully.");
-                document.getElementById("audioSuccess")!.classList.add("displayed")
-            }
-            ).catch((error) => {
-                //document.getElementById("apkLoading")!.style.display = "none"
-                document.getElementById("audioLoading")!.classList.remove("displayed")
-                console.error("Error loading audio file:", error);
-                document.getElementById("audioError")!.classList.add("displayed")
-                document.getElementById("audioError")!.innerText=`エラー : ${error}`;
-            })
-        }
     }
     Array.from(<HTMLCollectionOf<HTMLInputElement>>document.getElementsByClassName("range")).forEach((element) => {
         element.onchange = () => {
+            loadAudioFile(true);
             const start = parseInt((<HTMLInputElement>document.getElementById("weekStart")).value)
             const end = parseInt((<HTMLInputElement>document.getElementById("weekEnd")).value)
             if (start > end) {
@@ -147,4 +130,28 @@ window.onload = async () => {
             console.log(anki.weekRange)
         }
     })
+}
+function loadAudioFile(disableError: boolean = false) {
+
+    const files = (<HTMLInputElement>document.getElementById("audioFile")!).files;
+    if (files == null) return
+    if (files.length == 0) return
+    Array.from(<NodeListOf<HTMLElement>>document.querySelectorAll(".status.audio")).forEach((element) => {
+        element.classList.remove("displayed")
+    })
+    document.getElementById("audioLoading")!.classList.add("displayed")
+    anki.loadAudioZipFile(files).then(() => {
+        document.getElementById("audioLoading")!.classList.remove("displayed")
+        //document.getElementById("apkLoading")!.style.display = "none"
+        console.log("audio file loaded successfully.");
+        document.getElementById("audioSuccess")!.classList.add("displayed")
+    }
+    ).catch((error) => {
+        //document.getElementById("apkLoading")!.style.display = "none"
+        document.getElementById("audioLoading")!.classList.remove("displayed")
+        console.error("Error loading audio file:", error);
+        document.getElementById("audioError")!.classList.add("displayed")
+        document.getElementById("audioError")!.innerText = `エラー : ${error}`;
+    })
+
 }
