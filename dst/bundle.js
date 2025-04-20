@@ -49273,7 +49273,7 @@ class Anki {
             console.log(pkg);
             const compressedData = await pkg.writeToFile();
             const blob = new Blob([compressedData], { type: "application/apkg" });
-            const file = new File([blob], 'キクタン.txt', { type: blob.type });
+            const file = new File([blob], `キクタン${this.kikutanType}.apkg`, { type: blob.type });
             resolve(file);
         });
     }
@@ -49623,7 +49623,7 @@ window.onload = async () => {
             document.getElementById("exportSuccess").classList.add("displayed");
             const link = document.createElement("a");
             link.href = URL.createObjectURL(file);
-            link.download = "キクタン.apkg"; // ダウンロードするファイル名を指定
+            link.download = `キクタン${document.getElementById("type").value}.apkg`; // ダウンロードするファイル名を指定
             link.click();
             URL.revokeObjectURL(link.href);
             console.log('success');
