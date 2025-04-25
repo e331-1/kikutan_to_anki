@@ -215,7 +215,11 @@ export class Anki {
             var week = 0
 
             const deckList: Array<Deck> = []
-            Object.values(this.kikutanWords.advanced).forEach((word: any, index) => {
+
+            if (!this.kikutanType) {
+                throw new Error("kikutanType is not set");
+            }
+            Object.values(this.kikutanWords[this.kikutanType] ?? {}).forEach((word: any, index) => {
 
                 if (index % 112 == 0) {
                     week++
