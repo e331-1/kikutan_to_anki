@@ -1,7 +1,2 @@
 node_modules/*
-dist/bundle.js
-dist/bundle.js.map
-dist/src_worker_ts.js
-dist/src_worker_ts.js.map
-dist/vendors-node_modules_7z-wasm_7zz_es6_js.js
-dist/vendors-node_modules_7z-wasm_7zz_es6_js.js.map
+dst/build/*
