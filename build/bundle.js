@@ -2518,6 +2518,7 @@ class Anki {
     }
     async exportAnkiDeck() {
         return new Promise(async (resolve, reject) => {
+            var _a;
             const fields = [
                 { name: 'id' },
                 { name: 'word' },
@@ -2586,7 +2587,10 @@ class Anki {
             }
             var week = 0;
             const deckList = [];
-            Object.values(this.kikutanWords.advanced).forEach((word, index) => {
+            if (!this.kikutanType) {
+                throw new Error("kikutanType is not set");
+            }
+            Object.values((_a = this.kikutanWords[this.kikutanType]) !== null && _a !== void 0 ? _a : {}).forEach((word, index) => {
                 var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
                 if (index % 112 == 0) {
                     week++;
